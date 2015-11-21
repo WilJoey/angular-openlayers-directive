@@ -77,7 +77,7 @@ angular.module('openlayers-directive', ['ngSanitize']).directive('openlayers', f
                 
                 /* #JOE# */
                 var interactions = ol.interaction.defaults(defaults.interactions);
-                if(isDefined(attrs.dragAndDrop)){
+                if(isDefined(attrs.dragAndDrop) && attrs.dragAndDrop==='true'){
                     
                     interactions = ol.interaction.defaults().extend([dragAndDropInteraction]);
                     dragAndDropInteraction.on('addfeatures', function(event) {

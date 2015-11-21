@@ -279,9 +279,18 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
                 break;
                 
             case 'TGOS':
-                
                 oSource = new ol.source.XYZ({
                     tileUrlFunction: tgosTileUrl
+                });
+                break;
+                
+            case 'GPX':
+                if (!source.url) {
+                    $log.error('[AngularJS - Openlayers] - GPX Layer needs valid url and params properties');
+                }
+                oSource = new ol.source.Vector({
+                    url: source.url,
+                    format: new ol.format.GPX()
                 });
                 break;
         }
