@@ -46,7 +46,9 @@ module.exports = function (grunt, options) {
                 'src/header-MIT-license.txt',
                 'dist/angular-openlayers-directive.min.no-header.js'
             ],
-            dest: 'dist/angular-openlayers-directive.min.js',
+            //dest: 'dist/angular-openlayers-directive.min.js',
+            dest: 'E:/geoweb.visualstudio.com/TainanInspect/src/Grid.Tainan.Inspect/Grid.Tainan.Inspect/Scripts/angular-openlayers-directive.min.js',
+            
         },
     };
 };

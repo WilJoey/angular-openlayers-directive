@@ -25,6 +25,8 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
         });
     };
 
+
+
     var bingImagerySets = [
       'Road',
       'Aerial',
@@ -210,42 +212,7 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
                     tilePixelRatio: pixelRatio > 1 ? 2 : 1
                 });
                 break;
-            case 'ImageWMS':
-                if (!source.url || !source.params) {
-                    $log.error('[AngularJS - Openlayers] - ImageWMS Layer needs ' +
-                               'valid server url and params properties');
-                }
-                oSource = new ol.source.ImageWMS({
-                    url: source.url,
-                    attributions: createAttribution(source),
-                    crossOrigin: (typeof source.crossOrigin === 'undefined') ? 'anonymous' : source.crossOrigin,
-                    params: source.params
-                });
-                break;
-
-            case 'TileWMS':
-                if ((!source.url && !source.urls) || !source.params) {
-                    $log.error('[AngularJS - Openlayers] - TileWMS Layer needs ' +
-                               'valid url (or urls) and params properties');
-                }
-
-                var wmsConfiguration = {
-                    crossOrigin: (typeof source.crossOrigin === 'undefined') ? 'anonymous' : source.crossOrigin,
-                    params: source.params,
-                    attributions: createAttribution(source)
-                };
-
-                if (source.url) {
-                    wmsConfiguration.url = source.url;
-                }
-
-                if (source.urls) {
-                    wmsConfiguration.urls = source.urls;
-                }
-
-                oSource = new ol.source.TileWMS(wmsConfiguration);
-                break;
-
+            
             case 'WMTS':
                 if ((!source.url && !source.urls) || !source.tileGrid) {
                     $log.error('[AngularJS - Openlayers] - WMTS Layer needs valid url ' +
@@ -288,193 +255,7 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
                 }
 
                 break;
-            case 'BingMaps':
-                if (!source.key) {
-                    $log.error('[AngularJS - Openlayers] - You need an API key to show the Bing Maps.');
-                    return;
-                }
-
-                var bingConfiguration = {
-                    key: source.key,
-                    attributions: createAttribution(source),
-                    imagerySet: source.imagerySet ? source.imagerySet : bingImagerySets[0],
-                    culture: source.culture
-                };
-
-                if (source.maxZoom) {
-                    bingConfiguration.maxZoom = source.maxZoom;
-                }
-
-                oSource = new ol.source.BingMaps(bingConfiguration);
-                break;
-
-            case 'MapQuest':
-                if (!source.layer || mapQuestLayers.indexOf(source.layer) === -1) {
-                    $log.error('[AngularJS - Openlayers] - MapQuest layers needs a valid \'layer\' property.');
-                    return;
-                }
-
-                oSource = new ol.source.MapQuest({
-                    attributions: createAttribution(source),
-                    layer: source.layer
-                });
-
-                break;
-
-            case 'EsriBaseMaps':
-                if (!source.layer || esriBaseLayers.indexOf(source.layer) === -1) {
-                    $log.error('[AngularJS - Openlayers] - ESRI layers needs a valid \'layer\' property.');
-                    return;
-                }
-
-                var _urlBase = 'http://services.arcgisonline.com/ArcGIS/rest/services/';
-                var _url = _urlBase + source.layer + '/MapServer/tile/{z}/{y}/{x}';
-
-                oSource = new ol.source.XYZ({
-                    attributions: createAttribution(source),
-                    url: _url
-                });
-
-                break;
-
-            case 'GeoJSON':
-                if (!(source.geojson || source.url)) {
-                    $log.error('[AngularJS - Openlayers] - You need a geojson ' +
-                               'property to add a GeoJSON layer.');
-                    return;
-                }
-
-                if (isDefined(source.url)) {
-                    oSource = new ol.source.Vector({
-                        format: new ol.format.GeoJSON(),
-                        url: source.url
-                    });
-                } else {
-                    oSource = new ol.source.Vector();
-
-                    var projectionToUse = projection;
-                    if (isDefined(source.geojson.projection)) {
-                        projectionToUse = source.geojson.projection;
-                    }
-
-                    var geojsonFormat = new ol.format.GeoJSON();
-                    var features = geojsonFormat.readFeatures(
-                        source.geojson.object, { featureProjection: projectionToUse });
-
-                    oSource.addFeatures(features);
-                }
-
-                break;
-            case 'JSONP':
-                if (!(source.url)) {
-                    $log.error('[AngularJS - Openlayers] - You need an url properly configured to add a JSONP layer.');
-                    return;
-                }
-
-                if (isDefined(source.url)) {
-                    oSource = new ol.source.Vector({
-                        format: new ol.format.GeoJSON(),
-                        loader: function(/*extent, resolution, projection*/) {
-                            var url = source.url +
-                                      '&outputFormat=text/javascript&format_options=callback:JSON_CALLBACK';
-                            $http.jsonp(url, { cache: source.cache}).success(function(response) {
-                                oSource.addFeatures(oSource.readFeatures(response));
-                            }).error(function(response) {
-                                $log(response);
-                            });
-                        }
-                    });
-                }
-                break;
-            case 'TopoJSON':
-                if (!(source.topojson || source.url)) {
-                    $log.error('[AngularJS - Openlayers] - You need a topojson ' +
-                               'property to add a TopoJSON layer.');
-                    return;
-                }
-
-                if (source.url) {
-                    oSource = new ol.source.Vector({
-                        format: new ol.format.TopoJSON(),
-                        url: source.url
-                    });
-                } else {
-                    oSource = new ol.source.Vector(angular.extend(source.topojson, {
-                        format: new ol.format.TopoJSON()
-                    }));
-                }
-                break;
-            case 'TileJSON':
-                oSource = new ol.source.TileJSON({
-                    url: source.url,
-                    attributions: createAttribution(source),
-                    crossOrigin: 'anonymous'
-                });
-                break;
-
-            case 'TileVector':
-                if (!source.url || !source.format) {
-                    $log.error('[AngularJS - Openlayers] - TileVector Layer needs valid url and format properties');
-                }
-                oSource = new ol.source.TileVector({
-                    url: source.url,
-                    projection: projection,
-                    attributions: createAttribution(source),
-                    format: source.format,
-                    tileGrid: new ol.tilegrid.createXYZ({
-                        maxZoom: source.maxZoom || 19
-                    })
-                });
-                break;
-
-            case 'TileTMS':
-                if (!source.url || !source.tileGrid) {
-                    $log.error('[AngularJS - Openlayers] - TileTMS Layer needs valid url and tileGrid properties');
-                }
-                oSource = new ol.source.TileImage({
-                    url: source.url,
-                    maxExtent: source.maxExtent,
-                    attributions: createAttribution(source),
-                    tileGrid: new ol.tilegrid.TileGrid({
-                        origin: source.tileGrid.origin,
-                        resolutions: source.tileGrid.resolutions
-                    }),
-                    tileUrlFunction: function(tileCoord) {
-
-                        var z = tileCoord[0];
-                        var x = tileCoord[1];
-                        var y = tileCoord[2]; //(1 << z) - tileCoord[2] - 1;
-
-                        if (x < 0 || y < 0) {
-                            return '';
-                        }
-
-                        var url = source.url + z + '/' + x + '/' + y + '.png';
-
-                        return url;
-                    }
-                });
-                break;
-            case 'TileImage':
-                oSource = new ol.source.TileImage({
-                    url: source.url,
-                    attributions: createAttribution(source),
-                    tileGrid: new ol.tilegrid.TileGrid({
-                        origin: source.tileGrid.origin, // top left corner of the pixel projection's extent
-                        resolutions: source.tileGrid.resolutions
-                    }),
-                    tileUrlFunction: function(tileCoord/*, pixelRatio, projection*/) {
-                        var z = tileCoord[0];
-                        var x = tileCoord[1];
-                        var y = -tileCoord[2] - 1;
-                        var url = source.url
-                            .replace('{z}', z.toString())
-                            .replace('{x}', x.toString())
-                            .replace('{y}', y.toString());
-                        return url;
-                    }
-                });
-                break;
+           
             case 'KML':
                 var extractStyles = source.extractStyles || false;
                 oSource = new ol.source.Vector({
@@ -484,30 +265,7 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
                     extractStyles: extractStyles
                 });
                 break;
-            case 'Stamen':
-                if (!source.layer || !isValidStamenLayer(source.layer)) {
-                    $log.error('[AngularJS - Openlayers] - You need a valid Stamen layer.');
-                    return;
-                }
-                oSource = new ol.source.Stamen({
-                    layer: source.layer
-                });
-                break;
-            case 'ImageStatic':
-                if (!source.url || !angular.isArray(source.imageSize) || source.imageSize.length !== 2) {
-                    $log.error('[AngularJS - Openlayers] - You need a image URL to create a ImageStatic layer.');
-                    return;
-                }
-
-                oSource = new ol.source.ImageStatic({
-                    url: source.url,
-                    attributions: createAttribution(source),
-                    imageSize: source.imageSize,
-                    projection: projection,
-                    imageExtent: projection.getExtent(),
-                    imageLoadFunction: source.imageLoadFunction
-                });
-                break;
+           
             case 'XYZ':
                 if (!source.url) {
                     $log.error('[AngularJS - Openlayers] - XYZ Layer needs valid url and params properties');
@@ -517,6 +275,13 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
                     attributions: createAttribution(source),
                     minZoom: source.minZoom,
                     maxZoom: source.maxZoom
+                });
+                break;
+                
+            case 'TGOS':
+                
+                oSource = new ol.source.XYZ({
+                    tileUrlFunction: tgosTileUrl
                 });
                 break;
         }
@@ -529,6 +294,12 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
         return oSource;
     };
 
+    var tgosTileUrl = function (tileCoord, pixelRatio, projection) {
+        var p = 'http://api.tgos.nat.gov.tw/TileAgent/TGOSMAP_W.aspx/GetCacheImage?APPID=x+JLVSx85Lk=&APIKEY=in8W74q0ogpcfW/STwicK8D5QwCdddJf05/7nb+OtDh8R99YN3T0LurV4xato3TpL/fOfylvJ9Wv/khZEsXEWxsBmg+GEj4AuokiNXCh14Rei21U5GtJpIkO++Mq3AguFK/ISDEWn4hMzqgrkxNe1Q==&L=0' 
+        + '&X=' + tileCoord[1] + '&Y=' + tileCoord[2] + '&S=' + (20 - tileCoord[0] - 1);
+        return p;
+    };
+    
     var createAttribution = function(source) {
         var attributions = [];
         if (isDefined(source.attribution)) {
@@ -769,6 +540,7 @@ angular.module('openlayers-directive').factory('olHelpers', function($q, $log, $
             var oLayer;
             var type = detectLayerType(layer);
             var oSource = createSource(layer.source, projection);
+
             if (!oSource) {
                 return;
             }

@@ -1,5 +1,16 @@
 angular.module('openlayers-directive', ['ngSanitize']).directive('openlayers', function($log, $q, $compile, olHelpers,
         olMapDefaults, olData) {
+        /* #JOE# */
+        var dragAndDropInteraction = new ol.interaction.DragAndDrop({
+            formatConstructors: [
+                ol.format.GPX,
+                ol.format.GeoJSON,
+                ol.format.IGC,
+                ol.format.KML,
+                ol.format.TopoJSON
+            ]
+        });
+            
         return {
             restrict: 'EA',
             transclude: true,
@@ -61,9 +72,33 @@ angular.module('openlayers-directive', ['ngSanitize']).directive('openlayers', f
                 if (isDefined(attrs.zoom)) {
                     defaults.center.zoom = parseFloat(attrs.zoom);
                 }
-
+                
                 var controls = ol.control.defaults(defaults.controls);
+                
+                /* #JOE# */
                 var interactions = ol.interaction.defaults(defaults.interactions);
+                if(isDefined(attrs.dragAndDrop)){
+                    
+                    interactions = ol.interaction.defaults().extend([dragAndDropInteraction]);
+                    dragAndDropInteraction.on('addfeatures', function(event) {
+                        var vectorSource = new ol.source.Vector({
+                            features: event.features
+                        });
+                        map.addLayer(new ol.layer.Vector({
+                            source: vectorSource,
+                            style: olHelpers.createStyle({
+                                stroke: {
+                                    color: '#0f0',
+                                    width: 3
+                                }
+                            })
+                        }));
+                        map.getView().fit(
+                            vectorSource.getExtent(), /** @type {ol.Size} */ (map.getSize()));
+                        });
+                    }
+                
+                
                 var view = createView(defaults.view);
 
                 // Create the Openlayers Map Object with the options
